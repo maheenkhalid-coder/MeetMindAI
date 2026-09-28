@@ -29,6 +29,13 @@ def download_youtube_audio(url: str) -> str:
     ydl_opts = {
         "format": "bestaudio/best",
         "outtmpl": output_path,
+        
+        # Use Deno for YouTube's JavaScript challenges.
+        "js_runtimes": ["deno"],
+
+        # Allow yt-dlp to use its EJS challenge solver.
+        "remote_components": ["ejs:github"],
+
         "postprocessors": [
             {
                 "key": "FFmpegExtractAudio",
