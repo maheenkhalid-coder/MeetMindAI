@@ -8,7 +8,6 @@ import subprocess
 
 import yt_dlp
 from pydub import AudioSegment
-from setup_deno import install_deno
 
 
 DOWNLOAD_DIR = "downloads"
@@ -23,8 +22,6 @@ def download_youtube_audio(url: str) -> str:
     # Downloads the best available YouTube audio, converts it to WAV,
     # and returns the path of the downloaded file.
 
-    deno_path = install_deno()
-
     output_path = os.path.join(
         DOWNLOAD_DIR,
         "%(title)s.%(ext)s"
@@ -33,13 +30,6 @@ def download_youtube_audio(url: str) -> str:
     ydl_opts = {
         "format": "bestaudio/best",
         "outtmpl": output_path,
-
-        # Use Deno for YouTube's JavaScript challenges.
-        "js_runtimes": {
-                    "deno": {
-                    "path": deno_path
-                    }
-                },
 
         # Use yt-dlp's EJS challenge solver.
         "remote_components": ["ejs:github"],

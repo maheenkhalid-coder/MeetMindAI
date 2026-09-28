@@ -15,8 +15,9 @@ DENO_PATH = os.path.join(DENO_DIR, "deno")
 
 
 def install_deno() -> str:
-    # If Deno is already installed, reuse it.
-    if os.path.exists(DENO_PATH):
+    # Reuse Deno if it is already installed.
+    if os.path.isfile(DENO_PATH):
+        os.environ["PATH"] = f"{DENO_DIR}:{os.environ.get('PATH', '')}"
         print(f"Deno already installed: {DENO_PATH}")
         return DENO_PATH
 
@@ -41,11 +42,9 @@ def install_deno() -> str:
             f"Unsupported CPU architecture: {machine}"
         )
 
-    target = f"{architecture}-unknown-linux-gnu"
-
     download_url = (
         f"https://github.com/denoland/deno/releases/download/"
-        f"v{DENO_VERSION}/deno-{target}.zip"
+        f"v{DENO_VERSION}/deno-{architecture}-unknown-linux-gnu.zip"
     )
 
     zip_path = os.path.join(
@@ -65,14 +64,12 @@ def install_deno() -> str:
     with zipfile.ZipFile(zip_path, "r") as zip_file:
         zip_file.extractall(DENO_DIR)
 
-    # Remove the downloaded ZIP only if it still exists.
     if os.path.exists(zip_path):
         os.remove(zip_path)
 
-    if not os.path.exists(DENO_PATH):
+    if not os.path.isfile(DENO_PATH):
         raise RuntimeError(
-            f"Deno installation failed. "
-            f"Expected executable at: {DENO_PATH}"
+            f"Deno installation failed: {DENO_PATH}"
         )
 
     # Make Deno executable.
@@ -86,6 +83,18 @@ def install_deno() -> str:
         | stat.S_IXOTH
     )
 
+    # Make Deno available to yt-dlp.
+    os.environ["PATH"] = (
+        f"{DENO_DIR}:{os.environ.get('PATH', '')}"
+    )
+
     print(f"Deno installed successfully: {DENO_PATH}")
+
+    # Verify installation.
+    result = os.popen(
+        f'"{DENO_PATH}" --version'
+    ).read()
+
+    print(f"Deno version:\n{result}")
 
     return DENO_PATH
