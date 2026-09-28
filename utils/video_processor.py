@@ -35,7 +35,11 @@ def download_youtube_audio(url: str) -> str:
         "outtmpl": output_path,
 
         # Use Deno for YouTube's JavaScript challenges.
-        "js_runtimes": [f"deno:{deno_path}"],
+        "js_runtimes": {
+                    "deno": {
+                    "path": deno_path
+                    }
+                },
 
         # Use yt-dlp's EJS challenge solver.
         "remote_components": ["ejs:github"],

@@ -1,22 +1,23 @@
-# Downloads Deno if it is not already installed.
-# Deno is required by yt-dlp for current YouTube extraction.
+# Installs Deno for yt-dlp on Streamlit Community Cloud.
+# Deno is required for current YouTube JavaScript challenge solving.
 
 import os
 import platform
 import stat
-import tarfile
 import urllib.request
+import zipfile
 
 
-DENO_VERSION = "2.6.0"
+DENO_VERSION = "2.9.6"
+
 DENO_DIR = os.path.expanduser("~/.deno")
 DENO_PATH = os.path.join(DENO_DIR, "deno")
 
 
-def install_deno():
-    # Skip installation if Deno already exists.
+def install_deno() -> str:
+    # If Deno is already installed, reuse it.
     if os.path.exists(DENO_PATH):
-        print("Deno already installed.")
+        print(f"Deno already installed: {DENO_PATH}")
         return DENO_PATH
 
     print("Installing Deno...")
@@ -27,43 +28,64 @@ def install_deno():
     machine = platform.machine().lower()
 
     if system != "linux":
-        raise RuntimeError("This installer is intended for Linux deployment.")
+        raise RuntimeError(
+            f"Unsupported operating system: {system}"
+        )
 
     if machine in ("x86_64", "amd64"):
         architecture = "x86_64"
     elif machine in ("aarch64", "arm64"):
         architecture = "aarch64"
     else:
-        raise RuntimeError(f"Unsupported architecture: {machine}")
+        raise RuntimeError(
+            f"Unsupported CPU architecture: {machine}"
+        )
 
-    url = (
+    target = f"{architecture}-unknown-linux-gnu"
+
+    download_url = (
         f"https://github.com/denoland/deno/releases/download/"
-        f"v{DENO_VERSION}/deno-{architecture}-unknown-linux-gnu.zip"
+        f"v{DENO_VERSION}/deno-{target}.zip"
     )
 
-    zip_path = os.path.join(DENO_DIR, "deno.zip")
+    zip_path = os.path.join(
+        DENO_DIR,
+        "deno-download.zip"
+    )
 
-    print("Downloading Deno...")
-    urllib.request.urlretrieve(url, zip_path)
+    print(f"Downloading Deno {DENO_VERSION}...")
 
-    import zipfile
+    urllib.request.urlretrieve(
+        download_url,
+        zip_path
+    )
+
+    print("Extracting Deno...")
 
     with zipfile.ZipFile(zip_path, "r") as zip_file:
         zip_file.extractall(DENO_DIR)
 
-    os.remove(zip_path)
+    # Remove the downloaded ZIP only if it still exists.
+    if os.path.exists(zip_path):
+        os.remove(zip_path)
+
+    if not os.path.exists(DENO_PATH):
+        raise RuntimeError(
+            f"Deno installation failed. "
+            f"Expected executable at: {DENO_PATH}"
+        )
 
     # Make Deno executable.
-    current_permissions = os.stat(DENO_PATH).st_mode
+    permissions = os.stat(DENO_PATH).st_mode
+
     os.chmod(
         DENO_PATH,
-        current_permissions | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
+        permissions
+        | stat.S_IXUSR
+        | stat.S_IXGRP
+        | stat.S_IXOTH
     )
 
-    print(f"Deno installed: {DENO_PATH}")
+    print(f"Deno installed successfully: {DENO_PATH}")
 
     return DENO_PATH
-
-
-if __name__ == "__main__":
-    install_deno()

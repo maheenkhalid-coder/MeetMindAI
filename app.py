@@ -28,11 +28,6 @@ st.set_page_config(page_title="MeetMind AI", page_icon="🧠", layout="centered"
 
 from dotenv import load_dotenv
 
-from setup_deno import install_deno
-
-# Make sure Deno exists before yt-dlp is used.
-DENO_PATH = install_deno()
-
 PROJECT_ROOT = Path(__file__).resolve().parent
 sys.path.append(str(PROJECT_ROOT))
 
