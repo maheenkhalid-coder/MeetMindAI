@@ -1,18 +1,18 @@
 # 🧠 MeetMind AI
 
-> AI-powered meeting and video assistant that turns long conversations into searchable, actionable information.
+> AI-powered meeting and video assistant that transforms long conversations into searchable, summarized, and actionable information.
 
 ## 🚀 Live Demo
 
 **[Open MeetMind AI](https://meetmind-video-ai.streamlit.app/)**
 
-> Hosted on Streamlit Community Cloud. The first request may take longer after inactivity.
+> Hosted on Streamlit Community Cloud. The app may take a little longer to respond after a period of inactivity.
 
 ---
 
 ## 📌 What It Does
 
-MeetMind AI analyzes YouTube videos or audio/video files and automatically generates:
+MeetMind AI analyzes **YouTube videos and audio/video files** and automatically generates:
 
 * 🎙️ **Transcript**
 * 📝 **Meeting Summary**
@@ -22,7 +22,7 @@ MeetMind AI analyzes YouTube videos or audio/video files and automatically gener
 * ❓ **Open Questions**
 * 💬 **AI Meeting Chat**
 
-You can then ask questions about the meeting using **Retrieval-Augmented Generation (RAG)**.
+The transcript is also converted into embeddings and stored in **ChromaDB**, allowing users to ask questions about the meeting using **Retrieval-Augmented Generation (RAG)**.
 
 ---
 
@@ -33,219 +33,233 @@ You can then ask questions about the meeting using **Retrieval-Augmented Generat
 Supports YouTube URLs and local audio/video files.
 
 ```text
-Video / Audio
-     ↓
-Audio Extraction
-     ↓
-16 kHz Mono Audio
-     ↓
-Audio Chunks
+YouTube / Audio / Video
+          ↓
+     Audio Extraction
+          ↓
+      16 kHz Mono
+          ↓
+      Audio Chunks
 ```
+
+Audio processing is handled using **yt-dlp, FFmpeg, and pydub**.
+
+---
 
 ### 🎙️ AI Transcription
 
-Uses **Groq Whisper** to convert audio into text.
+MeetMind AI uses **Groq's Whisper API** for speech-to-text transcription.
 
-### 📝 Meeting Analysis
+```text
+Audio Chunks
+     ↓
+Groq Whisper
+     ↓
+Transcript
+```
 
-The LLM generates:
+The Whisper model runs through Groq's API rather than locally.
 
+---
+
+### 📝 AI Meeting Analysis
+
+The transcript is analyzed using the Groq LLM to generate:
+
+* Meeting title
 * Summary
-* Title
 * Action items
 * Key decisions
 * Open questions
 
+---
+
 ### 💬 RAG Meeting Chat
 
-The transcript is stored in **ChromaDB** as embeddings, allowing users to ask questions about the meeting.
+MeetMind AI uses **Retrieval-Augmented Generation (RAG)** to answer questions based on the meeting transcript.
 
 ```text
 Transcript
-    ↓
-Chunking
-    ↓
-Embeddings
-    ↓
+     ↓
+Text Chunking
+     ↓
+Hugging Face Embeddings
+     ↓
 ChromaDB
-    ↓
+     ↓
 Similarity Search
-    ↓
-Relevant Context
-    ↓
+     ↓
+Relevant Transcript Context
+     ↓
 Groq LLM
-    ↓
+     ↓
 Answer
 ```
+
+The AI is instructed to answer **only from the retrieved meeting transcript context**.
 
 ---
 
 ## 🏗️ Architecture
 
 ```text
-YouTube / Local File
-        ↓
-Audio Processing
-yt-dlp + FFmpeg + pydub
-        ↓
-Audio Chunks
-        ↓
-Groq Whisper
-        ↓
-Transcript
-        ↓
-┌───────────────┬────────────────┐
-↓               ↓                ↓
-Summary      Extraction        Title
-              ↓
-       Actions / Decisions
-       / Open Questions
-        ↓
-Embeddings
-        ↓
-ChromaDB
-        ↓
-RAG Chat
-        ↓
-Groq LLM
+                YouTube / Local File
+                         ↓
+                  yt-dlp + FFmpeg
+                         ↓
+                   pydub Processing
+                         ↓
+                   Audio Chunks
+                         ↓
+                  Groq Whisper API
+                         ↓
+                     Transcript
+                         ↓
+          ┌──────────────┼──────────────┐
+          ↓              ↓              ↓
+       Summary       Extraction       Title
+                         ↓
+              ┌──────────┼──────────┐
+              ↓          ↓          ↓
+        Action Items  Decisions  Questions
+                         ↓
+                  Text Chunking
+                         ↓
+              Hugging Face Embeddings
+                         ↓
+                      ChromaDB
+                         ↓
+                  Similarity Search
+                         ↓
+                Relevant Context
+                         ↓
+                    Groq LLM
+                         ↓
+                    RAG Answer
 ```
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Technology       | Purpose             |
-| ---------------- | ------------------- |
-| Python           | Application         |
-| Streamlit        | Web UI & deployment |
-| Groq             | LLM & transcription |
-| Whisper          | Speech-to-text      |
-| LangChain        | LLM & RAG pipeline  |
-| ChromaDB         | Vector database     |
-| Hugging Face     | Embeddings          |
-| all-MiniLM-L6-v2 | Text embeddings     |
-| yt-dlp           | YouTube audio       |
-| pydub            | Audio processing    |
-| FFmpeg           | Audio conversion    |
+| Technology           | Purpose                            |
+| -------------------- | ---------------------------------- |
+| **Python**           | Core application                   |
+| **Streamlit**        | Web UI & deployment                |
+| **Groq**             | LLM and speech-to-text API         |
+| **GPT-OSS 120B**     | Meeting analysis and RAG answers   |
+| **Whisper Large V3** | Speech-to-text                     |
+| **LangChain**        | LLM orchestration and RAG pipeline |
+| **ChromaDB**         | Vector database                    |
+| **Hugging Face**     | Text embeddings                    |
+| **all-MiniLM-L6-v2** | Embedding model                    |
+| **yt-dlp**           | YouTube media processing           |
+| **pydub**            | Audio processing                   |
+| **FFmpeg**           | Audio conversion                   |
+| **deep-translator**  | Translation support                |
 
 ---
 
 ## 🤖 AI Models
 
-**LLM**
+### 🧠 Large Language Model
 
 ```text
 openai/gpt-oss-120b
 ```
 
-Used for summaries, extraction, titles, and RAG answers.
+Used for:
 
-**Speech-to-Text**
+* Meeting summaries
+* Meeting titles
+* Action-item extraction
+* Key-decision extraction
+* Open-question extraction
+* RAG question answering
+
+The model is accessed through the **Groq API**.
+
+### 🎙️ Speech-to-Text
 
 ```text
 whisper-large-v3
 ```
 
-**Embeddings**
+Used to transcribe meeting and video audio through the **Groq API**.
+
+### 🔎 Embeddings
 
 ```text
 all-MiniLM-L6-v2
 ```
 
+Used to convert transcript chunks into vector embeddings for semantic search with ChromaDB.
+
 ---
 
-## 📁 Project Structure
+## 🧩 RAG Pipeline
+
+MeetMind AI uses a vector-based RAG pipeline:
 
 ```text
-MeetMind-AI/
-│
-├── core/
-│   ├── models.py
-│   ├── transcriber.py
-│   ├── summarizer.py
-│   ├── extractor.py
-│   ├── rag_engine.py
-│   └── vector_store.py
-│
-├── utils/
-│   └── audio_processor.py
-│
-├── app/
-│   ├── backend/
-│   └── frontend/
-│
-├── requirements.txt
-├── .gitignore
-└── README.md
+Meeting Transcript
+       ↓
+Recursive Text Splitting
+       ↓
+500 Character Chunks
+       ↓
+all-MiniLM-L6-v2
+       ↓
+Vector Embeddings
+       ↓
+ChromaDB
+       ↓
+Top 4 Similar Chunks
+       ↓
+Meeting Context
+       ↓
+GPT-OSS 120B
+       ↓
+Final Answer
 ```
 
+This allows users to ask questions such as:
+
+```text
+"What decisions were made about the project?"
+
+"Who was assigned the testing task?"
+
+"What are the open questions?"
+
+"What was discussed about the deadline?"
+```
 ---
 
-## ⚙️ Local Setup
+## ☁️ Deployment
 
-### 1. Clone
+MeetMind AI is deployed using **Streamlit Community Cloud**.
 
-```bash
-git clone https://github.com/YOUR_USERNAME/YOUR_REPOSITORY.git
-cd YOUR_REPOSITORY
-```
+### Live Application
 
-### 2. Create environment
+**[Launch MeetMind AI →](https://meetmind-video-ai.streamlit.app/)**
 
-```bash
-uv venv
-```
-
-Windows:
-
-```powershell
-.venv\Scripts\activate
-```
-
-### 3. Install dependencies
-
-```bash
-uv pip install -r requirements.txt
-```
-
-### 4. Add API key
-
-Create `.env`:
-
-```env
-GROQ_API_KEY=your_groq_api_key
-```
-
-### 5. Run
-
-```bash
-streamlit run app.py
-```
+The application uses environment secrets for the Groq API key rather than storing credentials in the repository.
 
 ---
 
 ## 🔮 Future Improvements
 
-* Speaker identification
-* Timestamp-based answers
-* PDF/Word export
-* Multiple meeting management
-* Persistent cloud vector storage
-* Authentication
-* Expanded multilingual support
+* 🎤 Speaker identification
+* ⏱️ Timestamp-based answers
+* 📄 PDF/Word export
+* 📚 Multiple meeting management
+* ☁️ Persistent cloud vector storage
+* 🔐 User authentication
+* 🌍 Expanded multilingual support
+* 🔎 More advanced semantic search
+* 📊 Meeting analytics and insights
 
----
-
-## 👩‍💻 Author
-
-**Maheen Khalid**
-
-Data Science & AI Developer
-
-**[GitHub](https://github.com/maheenkhalid-coder)**
-
----
-
-### 🚀 Try MeetMind AI
+## 🚀 Try MeetMind AI
 
 **[Launch the live app →](https://meetmind-video-ai.streamlit.app/)**
