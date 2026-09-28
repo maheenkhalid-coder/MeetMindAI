@@ -21,19 +21,20 @@ os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 def download_youtube_audio(url: str) -> str:
     # Downloads the best available YouTube audio, converts it to WAV,
     # and returns the path of the downloaded file.
+    #
+    # Tries multiple YouTube "player clients" in order. The android/ios
+    # clients avoid the JS signature-challenge YouTube uses on the web
+    # player, which is what was failing on Streamlit Cloud (no JS runtime
+    # available there for yt-dlp's ejs/deno-based solver).
 
     output_path = os.path.join(
         DOWNLOAD_DIR,
         "%(title)s.%(ext)s"
     )
 
-    ydl_opts = {
+    base_opts = {
         "format": "bestaudio/best",
         "outtmpl": output_path,
-
-        # Use yt-dlp's EJS challenge solver.
-        "remote_components": ["ejs:github"],
-
         "postprocessors": [
             {
                 "key": "FFmpegExtractAudio",
@@ -41,23 +42,38 @@ def download_youtube_audio(url: str) -> str:
                 "preferredquality": "192",
             }
         ],
-
         "quiet": True,
+        # Uncomment once you have a cookies file in place (see notes):
+        # "cookiefile": os.environ.get("YT_COOKIES_PATH"),
     }
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=True)
-        filename = ydl.prepare_filename(info)
+    player_clients_to_try = ["android", "ios", "web"]
+    last_error = None
 
-    filename = (
-        filename
-        .replace(".webm", ".wav")
-        .replace(".m4a", ".wav")
-        .replace(".mp4", ".wav")
-    )
+    for client in player_clients_to_try:
+        ydl_opts = {
+            **base_opts,
+            "extractor_args": {"youtube": {"player_client": [client]}},
+        }
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=True)
+                filename = ydl.prepare_filename(info)
+            filename = (
+                filename
+                .replace(".webm", ".wav")
+                .replace(".m4a", ".wav")
+                .replace(".mp4", ".wav")
+            )
+            return filename
+        except Exception as exc:
+            print(f"[MeetMind] player_client={client} failed: {exc}")
+            last_error = exc
+            continue
 
-    return filename
-
+    # All clients failed — surface the last error so the real cause
+    # (403, cookies needed, etc.) still shows up in the logs.
+    raise last_error
 
 def convert_to_wav(input_path: str) -> str:
     # Converts an audio/video file to mono 16 kHz WAV format

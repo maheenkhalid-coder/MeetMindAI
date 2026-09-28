@@ -26,10 +26,6 @@ import streamlit as st
 # Must be the first Streamlit command.
 st.set_page_config(page_title="MeetMind AI", page_icon="🧠", layout="centered")
 
-from setup_deno import install_deno
-
-DENO_PATH = install_deno()
-
 from dotenv import load_dotenv
 
 PROJECT_ROOT = Path(__file__).resolve().parent
