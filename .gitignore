@@ -1,0 +1,16 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Environment variables
+.env
+
+# Generated data
+vector_db/
+downloads/
+
+# Audio and video files
+*.wav
+*.mp3
+*.mp4
