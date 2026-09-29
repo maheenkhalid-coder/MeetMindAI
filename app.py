@@ -41,6 +41,18 @@ try:
 except Exception:
     pass
 
+# YouTube cookies — needed because YouTube blocks/challenges requests from
+# cloud-server IPs (Streamlit Cloud included) without an authenticated
+# session. Written to a temp file at startup; video_processor.py reads the
+# path from YT_COOKIES_PATH. Never commit the cookies themselves to GitHub.
+try:
+    if "YOUTUBE_COOKIES" in st.secrets:
+        cookies_path = Path(tempfile.gettempdir()) / "meetmind_yt_cookies.txt"
+        cookies_path.write_text(st.secrets["YOUTUBE_COOKIES"])
+        os.environ["YT_COOKIES_PATH"] = str(cookies_path)
+except Exception:
+    pass
+
 from core.extractor import (  # noqa: E402
     extract_action_items,
     extract_key_decisions,
