@@ -64,6 +64,15 @@ SUGGESTIONS = [
     "Summarize the most important points.",
 ]
 
+# Sample videos bundled with the app so visitors can test instantly without
+# their own file. Add real .mp4 files under samples/ with these exact names,
+# or edit the paths/labels below to match whatever you add.
+SAMPLE_VIDEOS = [
+    {"label": "Team Standup (~6 min)", "path": str(PROJECT_ROOT / "samples" / "sample_standup.mp4")},
+    {"label": "Product Demo (~8 min)", "path": str(PROJECT_ROOT / "samples" / "sample_demo.mp4")},
+    {"label": "Client Call (~10 min)", "path": str(PROJECT_ROOT / "samples" / "sample_client_call.mp4")},
+]
+
 # ---------------------------------------------------------------------------
 # Session state — replaces the FastAPI SESSIONS dict / cookie.
 # One video + 10 questions per browser session.
@@ -167,6 +176,38 @@ def run_pipeline(source: str) -> None:
 # ---------------------------------------------------------------------------
 # Analyze (replaces POST /api/analyze)
 # ---------------------------------------------------------------------------
+def start_analysis(source: str, is_youtube: bool) -> None:
+    """Shared logic: duration check, pipeline run, error handling.
+    Used by handle_analyze() (URL/upload) and the sample-video buttons."""
+    duration = get_duration_seconds(source, is_youtube)
+    if duration is not None and duration > MAX_DURATION_SECONDS:
+        st.error("**Video too long** — Please choose a video that is 10 minutes or shorter.")
+        return
+
+    # Lock the session to this one video before the heavy work starts.
+    st.session_state.video_submitted = True
+
+    try:
+        run_pipeline(source)
+    except Exception as exc:  # never show internals to the user
+        print(f"[MeetMind] processing error: {exc}")
+        traceback.print_exc()
+        # Unlock the session so a failed YouTube attempt doesn't burn
+        # the person's one video — they can retry with Upload file.
+        st.session_state.video_submitted = False
+        if is_youtube:
+            st.error(
+                "**Something went wrong** — This can happen when YouTube "
+                "blocks downloads from cloud servers. Please try the "
+                "**Upload file** tab instead."
+            )
+        else:
+            st.error("**Something went wrong** — We couldn't complete this request. Please try again.")
+        return
+
+    st.rerun()
+
+
 def handle_analyze(youtube_url: str, uploaded_file) -> None:
     if st.session_state.video_submitted:
         st.error("**Session limit reached** — This session is limited to one video.")
@@ -185,36 +226,19 @@ def handle_analyze(youtube_url: str, uploaded_file) -> None:
         else:
             source, is_youtube = youtube_url.strip(), True
 
-        duration = get_duration_seconds(source, is_youtube)
-        if duration is not None and duration > MAX_DURATION_SECONDS:
-            st.error("**Video too long** — Please choose a video that is 10 minutes or shorter.")
-            return
-
-        # Lock the session to this one video before the heavy work starts.
-        st.session_state.video_submitted = True
-
-        try:
-            run_pipeline(source)
-        except Exception as exc:  # never show internals to the user
-            print(f"[MeetMind] processing error: {exc}")
-            traceback.print_exc()
-            # Unlock the session so a failed YouTube attempt doesn't burn
-            # the person's one video — they can retry with Upload file.
-            st.session_state.video_submitted = False
-            if is_youtube:
-                st.error(
-                    "**Something went wrong** — This can happen when YouTube "
-                    "blocks downloads from cloud servers. Please try the "
-                    "**Upload file** tab instead."
-                )
-            else:
-                st.error("**Something went wrong** — We couldn't complete this request. Please try again.")
-            return
-
-        st.rerun()
+        start_analysis(source, is_youtube)
     finally:
         if tmp_dir:
             shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+def handle_sample(sample_path: str) -> None:
+    """Runs the pipeline on a sample file already bundled in the repo —
+    no upload needed, so visitors can test the app with one click."""
+    if st.session_state.video_submitted:
+        st.error("**Session limit reached** — This session is limited to one video.")
+        return
+    start_analysis(sample_path, is_youtube=False)
 
 
 # ---------------------------------------------------------------------------
@@ -265,11 +289,24 @@ st.caption(
     "insights, and ask questions using AI."
 )
 
+locked = st.session_state.video_submitted
+
+# ---------------------------------------------------------------------------
+# UI — sample videos (sidebar) — one-click testing, no file needed
+# ---------------------------------------------------------------------------
+with st.sidebar:
+    st.subheader("🎬 Try a sample")
+    st.caption("No video handy? Click one below to test instantly.")
+    available_samples = [s for s in SAMPLE_VIDEOS if os.path.exists(s["path"])]
+    if not available_samples:
+        st.caption("_No sample files found. Add .mp4s under `samples/` to enable this._")
+    for sample in available_samples:
+        if st.button(sample["label"], use_container_width=True, disabled=locked, key=f"sample_{sample['path']}"):
+            handle_sample(sample["path"])
+
 # ---------------------------------------------------------------------------
 # UI — input
 # ---------------------------------------------------------------------------
-locked = st.session_state.video_submitted
-
 with st.container(border=True):
     tab_url, tab_file = st.tabs(["YouTube URL", "Upload file"])
     with tab_url:
