@@ -28,14 +28,14 @@ def download_youtube_audio(url: str) -> str:
     # available there for yt-dlp's ejs/deno-based solver).
 
     cookies_path = os.environ.get("YT_COOKIES_PATH")
-    print(f"[MeetMind] YT_COOKIES_PATH = {cookies_path}")
+    print(f"[MeetMind] YT_COOKIES_PATH = {cookies_path}", flush=True)
     if cookies_path:
         exists = os.path.exists(cookies_path)
-        print(f"[MeetMind] cookies file exists: {exists}")
+        print(f"[MeetMind] cookies file exists: {exists}", flush=True)
         if exists:
             with open(cookies_path, "r") as f:
                 first_line = f.readline().strip()
-            print(f"[MeetMind] cookies file first line: {first_line!r}")
+            print(f"[MeetMind] cookies file first line: {first_line!r}", flush=True)
 
     output_path = os.path.join(
         DOWNLOAD_DIR,
