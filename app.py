@@ -45,6 +45,7 @@ except Exception:
 # cloud-server IPs (Streamlit Cloud included) without an authenticated
 # session. Written to a temp file at startup; video_processor.py reads the
 # path from YT_COOKIES_PATH. Never commit the cookies themselves to GitHub.
+print(f"[MeetMind] st.secrets keys: {list(st.secrets.keys())}", flush=True)
 try:
     if "YOUTUBE_COOKIES" in st.secrets:
         cookies_path = Path(tempfile.gettempdir()) / "meetmind_yt_cookies.txt"
