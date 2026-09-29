@@ -27,6 +27,16 @@ def download_youtube_audio(url: str) -> str:
     # player, which is what was failing on Streamlit Cloud (no JS runtime
     # available there for yt-dlp's ejs/deno-based solver).
 
+    cookies_path = os.environ.get("YT_COOKIES_PATH")
+    print(f"[MeetMind] YT_COOKIES_PATH = {cookies_path}")
+    if cookies_path:
+        exists = os.path.exists(cookies_path)
+        print(f"[MeetMind] cookies file exists: {exists}")
+        if exists:
+            with open(cookies_path, "r") as f:
+                first_line = f.readline().strip()
+            print(f"[MeetMind] cookies file first line: {first_line!r}")
+
     output_path = os.path.join(
         DOWNLOAD_DIR,
         "%(title)s.%(ext)s"
@@ -43,8 +53,7 @@ def download_youtube_audio(url: str) -> str:
             }
         ],
         "quiet": True,
-        # Uncomment once you have a cookies file in place (see notes):
-        # "cookiefile": os.environ.get("YT_COOKIES_PATH"),
+        "cookiefile": cookies_path or None,
     }
 
     player_clients_to_try = ["android", "ios", "web"]
