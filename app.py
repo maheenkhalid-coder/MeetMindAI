@@ -46,15 +46,15 @@ except Exception:
 # session. Written to a temp file at startup; video_processor.py reads the
 # path from YT_COOKIES_PATH. Never commit the cookies themselves to GitHub.
 try:
-    if "YT_COOKIES_PATH" in st.secrets:
+    if "YOUTUBE_COOKIES" in st.secrets:
         cookies_path = Path(tempfile.gettempdir()) / "meetmind_yt_cookies.txt"
-        cookies_path.write_text(st.secrets["YT_COOKIES_PATH"])
+        cookies_path.write_text(st.secrets["YOUTUBE_COOKIES"])
         os.environ["YT_COOKIES_PATH"] = str(cookies_path)
         print(f"[MeetMind] Cookies secret found, wrote to {cookies_path}", flush=True)
     else:
-        print("[MeetMind] YT_COOKIES_PATH not found in st.secrets", flush=True)
+        print("[MeetMind] YOUTUBE_COOKIES not found in st.secrets", flush=True)
 except Exception as exc:
-    print(f"[MeetMind] Failed to load YT_COOKIES_PATH secret: {exc}", flush=True)
+    print(f"[MeetMind] Failed to load YOUTUBE_COOKIES secret: {exc}", flush=True)
 
 from core.extractor import (  # noqa: E402
     extract_action_items,
