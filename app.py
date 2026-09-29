@@ -50,8 +50,11 @@ try:
         cookies_path = Path(tempfile.gettempdir()) / "meetmind_yt_cookies.txt"
         cookies_path.write_text(st.secrets["YOUTUBE_COOKIES"])
         os.environ["YT_COOKIES_PATH"] = str(cookies_path)
-except Exception:
-    pass
+        print(f"[MeetMind] Cookies secret found, wrote to {cookies_path}", flush=True)
+    else:
+        print("[MeetMind] YOUTUBE_COOKIES not found in st.secrets", flush=True)
+except Exception as exc:
+    print(f"[MeetMind] Failed to load YOUTUBE_COOKIES secret: {exc}", flush=True)
 
 from core.extractor import (  # noqa: E402
     extract_action_items,
