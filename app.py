@@ -48,8 +48,14 @@ except Exception:
 print(f"[MeetMind] st.secrets keys: {list(st.secrets.keys())}", flush=True)
 try:
     if "YOUTUBE_COOKIES" in st.secrets:
+        raw_cookies = st.secrets["YOUTUBE_COOKIES"]
+        # Streamlit's secrets editor can leave leading whitespace on each
+        # line inside a triple-quoted string; yt-dlp's Netscape cookie
+        # parser requires lines to start at column 0, so strip it.
+        cleaned = "\n".join(line.lstrip() for line in raw_cookies.splitlines()) + "\n"
+
         cookies_path = Path(tempfile.gettempdir()) / "meetmind_yt_cookies.txt"
-        cookies_path.write_text(st.secrets["YOUTUBE_COOKIES"])
+        cookies_path.write_text(cleaned)
         os.environ["YT_COOKIES_PATH"] = str(cookies_path)
         print(f"[MeetMind] Cookies secret found, wrote to {cookies_path}", flush=True)
     else:
