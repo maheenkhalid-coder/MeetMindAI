@@ -41,28 +41,6 @@ try:
 except Exception:
     pass
 
-# YouTube cookies — needed because YouTube blocks/challenges requests from
-# cloud-server IPs (Streamlit Cloud included) without an authenticated
-# session. Written to a temp file at startup; video_processor.py reads the
-# path from YT_COOKIES_PATH. Never commit the cookies themselves to GitHub.
-print(f"[MeetMind] st.secrets keys: {list(st.secrets.keys())}", flush=True)
-try:
-    if "YOUTUBE_COOKIES" in st.secrets:
-        raw_cookies = st.secrets["YOUTUBE_COOKIES"]
-        # Streamlit's secrets editor can leave leading whitespace on each
-        # line inside a triple-quoted string; yt-dlp's Netscape cookie
-        # parser requires lines to start at column 0, so strip it.
-        cleaned = "\n".join(line.lstrip() for line in raw_cookies.splitlines()) + "\n"
-
-        cookies_path = Path(tempfile.gettempdir()) / "meetmind_yt_cookies.txt"
-        cookies_path.write_text(cleaned)
-        os.environ["YT_COOKIES_PATH"] = str(cookies_path)
-        print(f"[MeetMind] Cookies secret found, wrote to {cookies_path}", flush=True)
-    else:
-        print("[MeetMind] YOUTUBE_COOKIES not found in st.secrets", flush=True)
-except Exception as exc:
-    print(f"[MeetMind] Failed to load YOUTUBE_COOKIES secret: {exc}", flush=True)
-
 from core.extractor import (  # noqa: E402
     extract_action_items,
     extract_key_decisions,
@@ -220,7 +198,17 @@ def handle_analyze(youtube_url: str, uploaded_file) -> None:
         except Exception as exc:  # never show internals to the user
             print(f"[MeetMind] processing error: {exc}")
             traceback.print_exc()
-            st.error("**Something went wrong** — We couldn't complete this request. Please try again.")
+            # Unlock the session so a failed YouTube attempt doesn't burn
+            # the person's one video — they can retry with Upload file.
+            st.session_state.video_submitted = False
+            if is_youtube:
+                st.error(
+                    "**Something went wrong** — This can happen when YouTube "
+                    "blocks downloads from cloud servers. Please try the "
+                    "**Upload file** tab instead."
+                )
+            else:
+                st.error("**Something went wrong** — We couldn't complete this request. Please try again.")
             return
 
         st.rerun()
@@ -289,6 +277,11 @@ with st.container(border=True):
             "YouTube URL",
             placeholder="https://www.youtube.com/watch?v=...",
             disabled=locked,
+        )
+        st.caption(
+            "ℹ️ On this hosted demo, YouTube may block downloads from cloud "
+            "servers. If a link doesn't work, please use **Upload file** "
+            "instead — it works every time."
         )
     with tab_file:
         uploaded_file = st.file_uploader(

@@ -24,18 +24,7 @@ def download_youtube_audio(url: str) -> str:
     #
     # Tries multiple YouTube "player clients" in order. The android/ios
     # clients avoid the JS signature-challenge YouTube uses on the web
-    # player, which is what was failing on Streamlit Cloud (no JS runtime
-    # available there for yt-dlp's ejs/deno-based solver).
-
-    cookies_path = os.environ.get("YT_COOKIES_PATH")
-    print(f"[MeetMind] YT_COOKIES_PATH = {cookies_path}", flush=True)
-    if cookies_path:
-        exists = os.path.exists(cookies_path)
-        print(f"[MeetMind] cookies file exists: {exists}", flush=True)
-        if exists:
-            with open(cookies_path, "r") as f:
-                first_line = f.readline().strip()
-            print(f"[MeetMind] cookies file first line: {first_line!r}", flush=True)
+    # player, which can fail in environments without a JS runtime.
 
     output_path = os.path.join(
         DOWNLOAD_DIR,
@@ -53,7 +42,6 @@ def download_youtube_audio(url: str) -> str:
             }
         ],
         "quiet": True,
-        "cookiefile": cookies_path or None,
     }
 
     player_clients_to_try = ["android", "ios", "web"]
@@ -81,7 +69,7 @@ def download_youtube_audio(url: str) -> str:
             continue
 
     # All clients failed — surface the last error so the real cause
-    # (403, cookies needed, etc.) still shows up in the logs.
+    # (403, JS challenge, etc.) still shows up in the logs.
     raise last_error
 
 def convert_to_wav(input_path: str) -> str:
