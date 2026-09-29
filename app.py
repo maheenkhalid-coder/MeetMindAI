@@ -68,9 +68,9 @@ SUGGESTIONS = [
 # their own file. Add real .mp4 files under samples/ with these exact names,
 # or edit the paths/labels below to match whatever you add.
 SAMPLE_VIDEOS = [
-    {"label": "Team Standup (~6 min)", "path": str(PROJECT_ROOT / "samples" / "sample_standup.mp4")},
-    {"label": "Product Demo (~8 min)", "path": str(PROJECT_ROOT / "samples" / "sample_demo.mp4")},
-    {"label": "Client Call (~10 min)", "path": str(PROJECT_ROOT / "samples" / "sample_client_call.mp4")},
+    {"label": "Sample Video 1", "path": str(PROJECT_ROOT / "samples" / "sample_video1.mp4")},
+    {"label": "Sample video 2", "path": str(PROJECT_ROOT / "samples" / "sample_video2.mp4")},
+    {"label": "Sample video 3", "path": str(PROJECT_ROOT / "samples" / "sample_video3.mp4")},
 ]
 
 # ---------------------------------------------------------------------------
